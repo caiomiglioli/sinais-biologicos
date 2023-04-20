@@ -21,22 +21,8 @@ class Eletroencefalograma:
         self.freq = freq
         self.rawData = self.__open(filename)
         self.data = None
-        # self.
-        # print(self.data.shape)
-        # print(self.data)
     #end init/open
-
-    def __open(self, filename):
-        data = list()
-        with open(filename) as file:
-            linhas = file.readlines()
-        for linha in linhas:
-            res = search('^\d{1,3},(?P<dado>(\ -?.+?,){%d})'%self.electrodes, linha)                
-            if res:
-                cols = res.group(1)
-                data.append([float(d[1:]) for d in cols.split(',') if d])
-        return np.array(data[1:])
-    #end open
+    
     
     def configure(self, electrodes=[], notch=0, lowcut=0, highcut=0):
         self.data = deepcopy(self.rawData)
@@ -64,6 +50,7 @@ class Eletroencefalograma:
             #Remove o que estiver acima de Highcut
             self.data = self.__butterLowpass(highcut)
     #end configure
+
 
     def execute(self, bufferSize, scale=0, simulate=False, start=0, finish=0):
         seconds = start
@@ -101,15 +88,29 @@ class Eletroencefalograma:
 
                 # plot
                 if simulate:
-                    self.consolePlot(bufferSize, seconds, features)
+                    self.__consolePlot(bufferSize, seconds, features)
                     sleep(1)
             #end while
         #end csv
     #end execute
+
+    # ---
+
+    def __open(self, filename):
+        data = list()
+        with open(filename) as file:
+            linhas = file.readlines()
+        for linha in linhas:
+            res = search('^\d{1,3},(?P<dado>(\ -?.+?,){%d})'%self.electrodes, linha)                
+            if res:
+                cols = res.group(1)
+                data.append([float(d[1:]) for d in cols.split(',') if d])
+        return np.array(data[1:])
+    #end open
     
     # ---
 
-    def consolePlot(self, bufferSize, second, features):
+    def __consolePlot(self, bufferSize, second, features):
         terminal = get_terminal_size()
 
         r = int(terminal.columns/2) #range
