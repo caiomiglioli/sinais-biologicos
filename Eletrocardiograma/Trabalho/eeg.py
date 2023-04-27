@@ -13,7 +13,6 @@ from sklearn.preprocessing import minmax_scale
 #debug
 # import matplotlib.pyplot as plt
 
-
 class Eletroencefalograma:
     def __init__(self, filename, freq, electrodes):
         self.filename = filename
@@ -22,8 +21,8 @@ class Eletroencefalograma:
         self.rawData = self.__open(filename)
         self.data = None
     #end init/open
-    
-    
+        
+
     def configure(self, electrodes=[], notch=0, lowcut=0, highcut=0):
         self.data = deepcopy(self.rawData)
 
@@ -52,22 +51,21 @@ class Eletroencefalograma:
     #end configure
 
 
-    def execute(self, bufferSize, scale=0, simulate=False, start=0, finish=0):
+    def execute(self, output, bufferSize, refresh, scale=0, simulate=False, start=0, finish=0):
         seconds = start
         breakPoint = (finish*self.freq) if finish>=(start+bufferSize) else self.data.shape[1]
 
-        with open(self.filename + '_output.csv', mode='w') as file:
+        with open(output + '.csv', mode='w') as file:
             writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             writer.writerow(['Janela', 'Delta', 'Theta', 'Alpha', 'Beta', 'Gamma'])
 
             while True:
                 #janela/buffer
-                seconds += 1
                 if seconds < bufferSize:
                     continue
                 
-                end = seconds * self.freq
-                begin = (seconds-bufferSize) * self.freq
+                end = int(seconds * self.freq)
+                begin = int((seconds-bufferSize) * self.freq)
 
                 if end > breakPoint:
                     break
@@ -90,11 +88,13 @@ class Eletroencefalograma:
                 if simulate:
                     self.__consolePlot(bufferSize, seconds, features)
                     sleep(1)
+                
+                seconds += refresh
             #end while
         #end csv
     #end execute
 
-    # ---
+    # ===============================================================================
 
     def __open(self, filename):
         data = list()
@@ -108,7 +108,6 @@ class Eletroencefalograma:
         return np.array(data[1:])
     #end open
     
-    # ---
 
     def __consolePlot(self, bufferSize, second, features):
         terminal = get_terminal_size()
@@ -135,7 +134,7 @@ class Eletroencefalograma:
         print(f'  DELTA:\t{delta}\n  THETA:\t{theta}\n  ALPHA:\t{alpha}\n  BETA: \t{beta}\n  GAMMA:\t{gamma}')
     #end consoleplot
 
-    # ---
+    # ===============================================================================
 
     #filters
     def __butterNotch(self, cutoff, var=1, order=4):
@@ -165,6 +164,7 @@ class Eletroencefalograma:
     #     return signal.filtfilt(b, a, self.data)
     #end filters
 
+    # ===============================================================================
 
     # #debug
     # def welchPlot(self, data):
@@ -198,12 +198,10 @@ class Eletroencefalograma:
     # #end matplotgraphs
 #end class eeg
 
-
-
 # =========================================================
 
 if __name__ == "__main__":
     eeg = Eletroencefalograma('teste.txt', 256, 8)
     eeg.configure(electrodes=[1,2,3,4,5], notch=60, lowcut=5, highcut=35)
     # eeg.matplotGraphs()
-    eeg.execute(bufferSize=5, scale=100, start=30, finish=50, simulate=True)
+    eeg.execute(output="teste", bufferSize=5, refresh=.5, scale=100, start=30, finish=50, simulate=True)
