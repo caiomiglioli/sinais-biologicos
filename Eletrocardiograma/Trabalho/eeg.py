@@ -87,7 +87,7 @@ class Eletroencefalograma:
                 # plot
                 if simulate:
                     self.__consolePlot(bufferSize, seconds, features)
-                    sleep(1)
+                    sleep(refresh)
                 
                 seconds += refresh
             #end while
