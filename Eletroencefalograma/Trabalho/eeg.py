@@ -38,16 +38,16 @@ class Eletroencefalograma:
         if notch:
             # aplica o filtro notch no valor determinado e nos harmonicos
             while notch <= (self.freq/2):
-                self.data = self.__butterNotch(notch)
+                self.data = self.__butterNotch(self.data, notch)
                 notch = notch*2
 
         if lowcut:
             #Remove o que estiver abaixo de Lowcut
-            self.data = self.__butterHighpass(lowcut)
+            self.data = self.__butterHighpass(self.data, lowcut)
 
         if highcut:
             #Remove o que estiver acima de Highcut
-            self.data = self.__butterLowpass(highcut)
+            self.data = self.__butterLowpass(self.data, highcut)
     #end configure
 
 
@@ -61,6 +61,7 @@ class Eletroencefalograma:
 
             while True:
                 #janela/buffer
+                # if seconds < (start+bufferSize):
                 if seconds < bufferSize:
                     continue
                 
@@ -124,37 +125,37 @@ class Eletroencefalograma:
         m = int(second / 60)
         m = m if m > 10 else f'0{m}'
         s = second % 60
-        s = s if s > 10 else f'0{s}'
+        s = f'{s:.2f}' if s > 10 else f'0{s:.2f}'
 
         for i in range(terminal.lines):
             clear = '\x1b[F' + (' ' * terminal.columns) + '\x1b[A'
             print(clear)
         print(f'Arquivo: {self.filename}')
-        print(f'Simulação / Buffer {bufferSize}s / Segundo {second} ({m}:{s}):')
+        print(f'Simulação / Buffer {bufferSize}s / Segundo {second:.2f} ({m}:{s}):')
         print(f'  DELTA:\t{delta}\n  THETA:\t{theta}\n  ALPHA:\t{alpha}\n  BETA: \t{beta}\n  GAMMA:\t{gamma}')
     #end consoleplot
 
     # ===============================================================================
 
     #filters
-    def __butterNotch(self, cutoff, var=1, order=4):
+    def __butterNotch(self, data, cutoff, var=1, order=4):
         nyq = self.freq * 0.5
         low = (cutoff - var) / nyq
         high = (cutoff + var) / nyq
         b, a = signal.iirfilter(order, [low, high], btype='bandstop', ftype="butter")
-        return signal.filtfilt(b, a, self.data)
+        return signal.filtfilt(b, a, data)
 
-    def __butterLowpass(self, lowcut, order=4):
+    def __butterLowpass(self, data, lowcut, order=4):
         nyq = self.freq * 0.5
         low = lowcut / nyq
         b, a = signal.butter(order, low, btype='lowpass')
-        return signal.filtfilt(b, a, self.data)
+        return signal.filtfilt(b, a, data)
 
-    def __butterHighpass(self, highcut, order=4):
+    def __butterHighpass(self, data, highcut, order=4):
         nyq = self.freq * 0.5
         high = highcut / nyq
         b, a = signal.butter(order, high, btype='highpass')
-        return signal.filtfilt(b, a, self.data)
+        return signal.filtfilt(b, a, data)
     
     # def __butterBandpass(self, lowcut, highcut, order=4):
     #     nyq = self.freq * 0.5
@@ -204,4 +205,4 @@ if __name__ == "__main__":
     eeg = Eletroencefalograma('teste.txt', 256, 8)
     eeg.configure(electrodes=[1,2,3,4,5], notch=60, lowcut=5, highcut=35)
     # eeg.matplotGraphs()
-    eeg.execute(output="teste", bufferSize=5, refresh=.5, scale=100, start=30, finish=50, simulate=True)
+    eeg.execute(output="teste", bufferSize=5, refresh=1, scale=100, start=30, finish=50, simulate=True)
